@@ -4,17 +4,16 @@ import PyPDF2
 import os
 from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
 import pickle
 
-# Setup Groq API via OpenAI wrapper
-api_key = st.secrets["groq"]["api_key"]
-client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
+# Setup Groq API via OpenAI wrapper (for chat completions)
+client = OpenAI(api_key=st.secrets["groq"]["api_key"], base_url="https://api.groq.com/openai/v1")
 
-st.title("📚 PDF Chatbot with Step-by-Step Agent (Groq + Local RAG)")
+st.title("📚 PDF Chatbot with Step-by-Step Agent (Free HuggingFace Embeddings + Groq RAG)")
 
-# --- Password protection (optional, add your logic if desired) ---
+# --- Optional: Password protection ---
 # if "logged_in" not in st.session_state:
 #     password = st.text_input("🔒 Enter app password:", type="password")
 #     if password == st.secrets["auth"]["password"]:
@@ -32,7 +31,6 @@ Path("indexes").mkdir(exist_ok=True)
 
 vectorstore = None
 
-# Process file
 if uploaded_file:
     # Save uploaded PDF locally
     filename = uploaded_file.name
@@ -57,8 +55,8 @@ if uploaded_file:
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         docs = text_splitter.create_documents([full_text])
 
-        # Embed + index
-        embeddings = OpenAIEmbeddings(openai_api_key=api_key, openai_api_base="https://api.groq.com/openai/v1")
+        # Use HuggingFace Embeddings (no API key needed)
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         vectorstore = FAISS.from_documents(docs, embeddings)
 
         # Save FAISS index to disk
@@ -66,7 +64,7 @@ if uploaded_file:
             pickle.dump(vectorstore, f)
         st.success("✅ Vector index created and saved locally!")
 
-# Ask a question (this part should NOT be inside the previous else block)
+# Question and agent logic
 if uploaded_file and vectorstore:
     question = st.text_input("Ask a question about the PDF:")
 

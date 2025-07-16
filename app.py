@@ -12,7 +12,16 @@ import pickle
 api_key = st.secrets["groq"]["api_key"]
 client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
 
-st.title("📚 PDF Chatbot (Local RAG + Groq)")
+st.title("📚 PDF Chatbot with Step-by-Step Agent (Groq + Local RAG)")
+
+# --- Password protection (optional, add your logic if desired) ---
+# if "logged_in" not in st.session_state:
+#     password = st.text_input("🔒 Enter app password:", type="password")
+#     if password == st.secrets["auth"]["password"]:
+#         st.session_state.logged_in = True
+#         st.success("🔓 Access granted.")
+#     else:
+#         st.stop()
 
 # Upload file
 uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
@@ -20,6 +29,8 @@ uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
 # Create directories if needed
 Path("pdfs").mkdir(exist_ok=True)
 Path("indexes").mkdir(exist_ok=True)
+
+vectorstore = None
 
 # Process file
 if uploaded_file:
@@ -55,15 +66,17 @@ if uploaded_file:
             pickle.dump(vectorstore, f)
         st.success("✅ Vector index created and saved locally!")
 
-    # Ask a question
+# Ask a question (this part should NOT be inside the previous else block)
+if uploaded_file and vectorstore:
     question = st.text_input("Ask a question about the PDF:")
 
     if question:
         with st.spinner("Thinking..."):
             docs = vectorstore.similarity_search(question, k=3)
             context = "\n\n".join([doc.page_content for doc in docs])
-           # Step-by-step reasoning agent prompt
-agent_prompt = f"""
+
+            # Step-by-step reasoning agent prompt
+            agent_prompt = f"""
 You're a reasoning assistant. Given a document and a question, think through the answer step by step.
 
 Context from PDF:
@@ -83,13 +96,9 @@ Step 2: ...
 ✅ Final Answer: ...
 """
 
-response = client.chat.completions.create(
-    model="llama3-8b-8192",
-    messages=[{"role": "user", "content": agent_prompt}]
-)
+            response = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[{"role": "user", "content": agent_prompt}]
+            )
             st.markdown("**Answer:**")
             st.write(response.choices[0].message.content)
-
-
-
-

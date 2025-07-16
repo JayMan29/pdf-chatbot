@@ -4,7 +4,7 @@ import PyPDF2
 import os
 from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 import pickle
 

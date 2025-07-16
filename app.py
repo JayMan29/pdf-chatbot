@@ -5,7 +5,11 @@ import os
 from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+<<<<<<< HEAD
 from langchain_community.embeddings import HuggingFaceEmbeddings
+=======
+from langchain.embeddings import OpenAIEmbeddings
+>>>>>>> 9b406ddd10075d0b5821f237d52390a2def83cf6
 import pickle
 
 # Setup Groq API via OpenAI wrapper (for chat completions)
